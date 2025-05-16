@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text-to-Video Generator using Vadoo API</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            color: #333;
+        }
+        h1, h2 {
+            color: #2c3e50;
+        }
+        .container {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            font-weight: 500;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+        }
+        .error {
+            background-color: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+        }
+        .success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #a5d6a7;
+        }
+        .loading {
+            background-color: #e3f2fd;
+            color: #1565c0;
+            border: 1px solid #90caf9;
+        }
+        .info-box {
+            background-color: #e8f7ff;
+            border-left: 4px solid #3498db;
+            padding: 10px 15px;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+        .toggle-button {
+            background-color: #f1f1f1;
+            color: #333;
+            padding: 8px 12px;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+        .advanced-options {
+            display: none;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        .two-column {
+            display: flex;
+            justify-content: space-between;
+        }
+        .column {
+            width: 48%;
+        }
+        #videoOutput {
+            margin-top: 20px;
+        }
+        video {
+            width: 100%;
+            border-radius: 4px;
+        }
+        .webhook-info {
+            background-color: #fdf9e6;
+            padding: 15px;
+            border-left: 4px solid #f9c22e;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Text-to-Video Generator</h1>
+    <p>Create AI-generated videos from text prompts using the Vadoo API</p>
+    
+    <div class="container">
+        <div class="form-group">
+            <label for="apiKey">Vadoo API Key:</label>
+            <input type="password" id="apiKey" placeholder="Enter your Vadoo API key">
+            <div class="info-box">
+                You need to generate an API key from <a href="https://viral.vadoo.tv/profile" target="_blank">Vadoo's profile page</a>.
+                Also, make sure to set up a webhook URL on the same page to receive the video generation status.
+            </div>
+        </div>
+
+        <div class="webhook-info">
+            <strong>Important:</strong> The Vadoo API requires you to set up a webhook URL to receive the generated video. 
+            To test locally, you can use tools like ngrok or a service like webhook.site to receive the webhook notifications.
+        </div>
+        
+        <button id="toggleAdvanced" class="toggle-button">Show Advanced Options</button>
+        
+        <div id="advancedOptions" class="advanced-options">
+            <div class="two-column">
+                <div class="column">
+                    <div class="form-group">
+                        <label for="voice">Voice:</label>
+                        <select id="voice">
+                            <option value="Charlie">Charlie (Default)</option>
+                            <option value="Clyde">Clyde</option>
+                            <option value="Dave">Dave</option>
+                            <option value="Emma">Emma</option>
+                            <option value="Grace">Grace</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="form-group">
+                        <label for="language">Language:</label>
+                        <select id="language">
+                            <option value="English">English (Default)</option>
+                            <option value="Spanish">Spanish</option>
+                            <option value="French">French</option>
+                            <option value="German">German</option>
+                            <option value="Italian">Italian</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="two-column">
+                <div class="column">
+                    <div class="form-group">
+                        <label for="theme">Theme Style:</label>
+                        <select id="theme">
+                            <option value="Hormozi_1">Hormozi_1 (Default)</option>
+                            <option value="Modern_1">Modern_1</option>
+                            <option value="Classic_1">Classic_1</option>
+                            <option value="Minimal">Minimal</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="form-group">
+                        <label for="duration">Duration:</label>
+                        <select id="duration">
+                            <option value="30-60">30-60 seconds (Default)</option>
+                            <option value="60-90">60-90 seconds</option>
+                            <option value="90-120">90-120 seconds</option>
+                            <option value="5 min">5 minutes</option>
+                            <option value="10 min">10 minutes</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="two-column">
+                <div class="column">
+                    <div class="form-group">
+                        <label for="aspectRatio">Aspect Ratio:</label>
+                        <select id="aspectRatio">
+                            <option value="9:16">9:16 - Portrait/Mobile (Default)</option>
+                            <option value="16:9">16:9 - Landscape</option>
+                            <option value="1:1">1:1 - Square</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="form-group">
+                        <label for="style">Image Style:</label>
+                        <select id="style">
+                            <option value="None">None (Default)</option>
+                            <option value="Cinematic">Cinematic</option>
+                            <option value="Cartoon">Cartoon</option>
+                            <option value="3D">3D</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="customInstructions">Custom Instructions (Optional):</label>
+                <textarea id="customInstructions" placeholder="Add any custom instructions to guide the AI, such as character descriptions, visual preferences, etc."></textarea>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="prompt">Enter Your Prompt:</label>
+            <textarea id="prompt" placeholder="Describe the video you want to generate..."></textarea>
+        </div>
+        
+        <button id="generateBtn">Generate Video</button>
+        
+        <div id="statusMessage" class="status" style="display: none;"></div>
+        
+        <div id="videoOutput"></div>
+    </div>
+    
+    <div class="container">
+        <h2>Generated Video History</h2>
+        <p>Videos generated during this session will appear here. Note: Vadoo videos expire after 30 minutes.</p>
+        <div id="videoHistory"></div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const generateBtn = document.getElementById('generateBtn');
+            const toggleAdvancedBtn = document.getElementById('toggleAdvanced');
+            const advancedOptions = document.getElementById('advancedOptions');
+            const apiKeyInput = document.getElementById('apiKey');
+            const promptInput = document.getElementById('prompt');
+            const statusMessage = document.getElementById('statusMessage');
+            const videoOutput = document.getElementById('videoOutput');
+            const videoHistory = document.getElementById('videoHistory');
+            
+            // Advanced options
+            const voiceSelect = document.getElementById('voice');
+            const languageSelect = document.getElementById('language');
+            const themeSelect = document.getElementById('theme');
+            const durationSelect = document.getElementById('duration');
+            const aspectRatioSelect = document.getElementById('aspectRatio');
+            const styleSelect = document.getElementById('style');
+            const customInstructionsInput = document.getElementById('customInstructions');
+            
+            // Store active polling timers
+            const activePolls = {};
+            
+            // Toggle advanced options
+            toggleAdvancedBtn.addEventListener('click', function() {
+                if (advancedOptions.style.display === 'none') {
+                    advancedOptions.style.display = 'block';
+                    toggleAdvancedBtn.textContent = 'Hide Advanced Options';
+                } else {
+                    advancedOptions.style.display = 'none';
+                    toggleAdvancedBtn.textContent = 'Show Advanced Options';
+                }
+            });
+            
+            // Check for saved API key
+            if (localStorage.getItem('vadooApiKey')) {
+                apiKeyInput.value = localStorage.getItem('vadooApiKey');
+            }
+            
+            // Save API key when changed
+            apiKeyInput.addEventListener('change', function() {
+                localStorage.setItem('vadooApiKey', apiKeyInput.value);
+            });
+            
+            // Generate video button click handler
+            generateBtn.addEventListener('click', generateVideo);
+            
+            // Add event listener for retrieve video button
+            const retrieveVideoBtn = document.getElementById('retrieveVideoBtn');
+            const videoIdInput = document.getElementById('videoIdInput');
+            
+            retrieveVideoBtn.addEventListener('click', function() {
+                const input = videoIdInput.value.trim();
+                if (!input) {
+                    showStatus('Please enter a video ID or URL', 'error');
+                    return;
+                }
+                
+                // Extract video ID from input (whether it's just the ID or a full URL)
+                let videoId;
+                if (input.includes('/')) {
+                    // It's a URL, extract the ID from the end
+                    const parts = input.split('/');
+                    videoId = parts[parts.length - 1];
+                } else {
+                    // It's just the ID
+                    videoId = input;
+                }
+                
+                // Display the video
+                displayVideo(videoId);
+            });
+            
+            async function generateVideo() {
+                const apiKey = apiKeyInput.value.trim();
+                const prompt = promptInput.value.trim();
+                
+                // Validate inputs
+                if (!apiKey) {
+                    showStatus('Please enter your Vadoo API key.', 'error');
+                    return;
+                }
+                
+                if (!prompt) {
+                    showStatus('Please enter a prompt for the video.', 'error');
+                    return;
+                }
+                
+                // Disable button and show loading status
+                generateBtn.disabled = true;
+                showStatus('Sending request to generate video...', 'loading');
+                
+                try {
+                    // Get values from advanced options
+                    const topic = 'Custom'; // We're using a custom prompt
+                    const voice = voiceSelect.value;
+                    const theme = themeSelect.value;
+                    const language = languageSelect.value;
+                    const duration = durationSelect.value;
+                    const aspectRatio = aspectRatioSelect.value;
+                    const style = styleSelect.value;
+                    const customInstructions = customInstructionsInput.value;
+                    
+                    // Create request body
+                    const requestBody = {
+                        topic: topic,
+                        voice: voice,
+                        theme: theme,
+                        style: style,
+                        language: language,
+                        duration: duration,
+                        aspect_ratio: aspectRatio,
+                        prompt: prompt
+                    };
+                    
+                    // Add custom instructions if provided
+                    if (customInstructions) {
+                        requestBody.custom_instruction = customInstructions;
+                    }
+                    
+                    // Make API request
+                    const response = await fetch('https://viralapi.vadoo.tv/api/generate_video', {
+                        method: 'POST',
+                        headers: {
+                            'X-API-KEY': apiKey,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(requestBody)
+                    });
+                    
+                    if (!response.ok) {
+                        let errorText = await response.text();
+                        throw new Error(`API responded with status ${response.status}: ${errorText}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (data && data.vid) {
+                        // Success response
+                        const videoId = data.vid;
+                        showStatus(`Video generation started! Video ID: ${videoId}. Auto-checking for completion...`, 'success');
+                        
+                        // Add to video history
+                        addToVideoHistory(videoId, prompt);
+                        
+                        // Start polling for video completion
+                        startPollingForVideo(videoId, apiKey);
+                    } else {
+                        showStatus('Received unexpected response format from API.', 'error');
+                    }
+                } catch (error) {
+                    console.error('API request failed:', error);
+                    showStatus(`Error: ${error.message}`, 'error');
+                } finally {
+                    // Re-enable button
+                    generateBtn.disabled = false;
+                }
+            }
+            
+            function showStatus(message, type) {
+                statusMessage.textContent = message;
+                statusMessage.className = `status ${type}`;
+                statusMessage.style.display = 'block';
+            }
+            
+            function addToVideoHistory(videoId, prompt) {
+                const historyItem = document.createElement('div');
+                historyItem.style.padding = '10px';
+                historyItem.style.marginBottom = '10px';
+                historyItem.style.backgroundColor = '#f5f5f5';
+                historyItem.style.borderRadius = '4px';
+                
+                historyItem.innerHTML = `
+                    <p><strong>Video ID:</strong> ${videoId}</p>
+                    <p><strong>Prompt:</strong> ${prompt}</p>
+                    <p><strong>Status:</strong> Pending (check webhook for video URL)</p>
+                    <hr>
+                `;
+                
+                videoHistory.prepend(historyItem);
+            }
+            
+            // Add polling function
+            function startPollingForVideo(videoId, apiKey) {
+                let pollingCount = 0;
+                const maxPolls = 30; // Max number of attempts (10 minutes total with 20-second intervals)
+                const pollingInterval = 20000; // 20 seconds between checks
+                
+                // Update status to show polling is active
+                updateHistoryItemStatus(videoId, 'Checking for video completion...');
+                
+                // Create a polling interval
+                const pollingTimer = setInterval(async () => {
+                    pollingCount++;
+                    
+                    // Update status with attempt count
+                    updateHistoryItemStatus(videoId, `Checking for video completion... (Attempt ${pollingCount}/${maxPolls})`);
+                    
+                    try {
+                        // Check if video is ready using direct API call
+                        // First try the video check endpoint if available
+                        const checkUrl = `https://viralapi.vadoo.tv/api/check_video?vid=${videoId}`;
+                        const checkResponse = await fetch(checkUrl, {
+                            method: 'GET',
+                            headers: {
+                                'X-API-KEY': apiKey
+                            }
+                        });
+                        
+                        // If check endpoint is successful
+                        if (checkResponse.ok) {
+                            const checkData = await checkResponse.json();
+                            
+                            // Check if video is completed
+                            if (checkData && checkData.status === 'completed' && checkData.video_url) {
+                                // Video is ready!
+                                clearInterval(pollingTimer);
+                                displayVideo(videoId);
+                                return;
+                            } else if (checkData && checkData.status === 'failed') {
+                                // Video generation failed
+                                clearInterval(pollingTimer);
+                                updateHistoryItemStatus(videoId, 'Video generation failed');
+                                showStatus(`Video generation failed: ${checkData.error || 'Unknown error'}`, 'error');
+                                return;
+                            }
+                            // If not ready yet, continue polling
+                        }
+                        
+                        // Alternative: Try to directly access the video page
+                        // If this request succeeds, the video is probably ready
+                        const directVideoUrl = `https://ai.vadoo.tv/api/video/${videoId}`;
+                        const directResponse = await fetch(directVideoUrl, {
+                            method: 'HEAD'
+                        });
+                        
+                        if (directResponse.ok) {
+                            // If we can access the video directly, it's ready
+                            clearInterval(pollingTimer);
+                            displayVideo(videoId);
+                            return;
+                        }
+                    } catch (error) {
+                        console.log('Polling attempt failed:', error);
+                        // Continue polling despite errors
+                    }
+                    
+                    // Stop polling after max attempts
+                    if (pollingCount >= maxPolls) {
+                        clearInterval(pollingTimer);
+                        updateHistoryItemStatus(videoId, 'Polling timed out. Try manual retrieval.');
+                        showStatus(`Could not automatically detect video completion after ${maxPolls} attempts. Please use manual retrieval or check your email.`, 'error');
+                    }
+                }, pollingInterval);
+                
+                // Store the timer ID with the video ID
+                activePolls[videoId] = pollingTimer;
+            }
+            
+            // Helper function to update status in history item
+            function updateHistoryItemStatus(videoId, statusText) {
+                const historyItems = videoHistory.querySelectorAll('div');
+                for (const item of historyItems) {
+                    if (item.textContent.includes(videoId)) {
+                        const statusElement = item.querySelector('p:nth-child(3)');
+                        if (statusElement) {
+                            statusElement.innerHTML = `<strong>Status:</strong> ${statusText}`;
+                        }
+                        break;
+                    }
+                }
+            }
+            
+            // Helper function to update status in history item
+            function updateHistoryItemStatus(videoId, statusText) {
+                const historyItems = videoHistory.querySelectorAll('div');
+                for (const item of historyItems) {
+                    if (item.textContent.includes(videoId)) {
+                        const statusElement = item.querySelector('p:nth-child(3)');
+                        if (statusElement) {
+                            statusElement.innerHTML = `<strong>Status:</strong> ${statusText}`;
+                        }
+                        break;
+                    }
+                }
+            }
+            
+            function displayVideo(videoId) {
+                // Show loading status
+                showStatus('Retrieving video...', 'loading');
+                
+                // Create the video URL
+                const videoUrl = `https://ai.vadoo.tv/video/${videoId}`;
+                const directVideoUrl = `https://ai.vadoo.tv/api/video/${videoId}`;
+                
+                // Create video element
+                const videoContainer = document.createElement('div');
+                videoContainer.innerHTML = `
+                    <h3>Your Generated Video</h3>
+                    <div style="position: relative; padding-top: 56.25%; /* 16:9 Aspect Ratio */"> 
+                        <iframe 
+                            src="${videoUrl}" 
+                            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;" 
+                            allowfullscreen>
+                        </iframe>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <p><strong>Video ID:</strong> ${videoId}</p>
+                        <p><strong>Note:</strong> This video will expire after 30 minutes from generation time.</p>
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <a href="${videoUrl}" target="_blank" style="background-color: #3498db; color: white; text-decoration: none; padding: 8px 15px; border-radius: 4px; display: inline-block;">View in Vadoo</a>
+                            <a href="${directVideoUrl}" download="video_${videoId}.mp4" style="background-color: #2ecc71; color: white; text-decoration: none; padding: 8px 15px; border-radius: 4px; display: inline-block;">Download Video</a>
+                        </div>
+                    </div>
+                `;
+                
+                videoOutput.innerHTML = '';
+                videoOutput.appendChild(videoContainer);
+                
+                // Update history item if exists
+                const historyItems = videoHistory.querySelectorAll('div');
+                let found = false;
+                
+                for (const item of historyItems) {
+                    if (item.textContent.includes(videoId)) {
+                        const statusElement = item.querySelector('p:nth-child(3)');
+                        if (statusElement) {
+                            statusElement.innerHTML = `<strong>Status:</strong> Available! <a href="${videoUrl}" target="_blank">View Video</a>`;
+                            found = true;
+                        }
+                        break;
+                    }
+                }
+                
+                // If not in history, add it
+                if (!found) {
+                    addToVideoHistory(videoId, "Manually retrieved");
+                    const historyItems = videoHistory.querySelectorAll('div');
+                    const firstItem = historyItems[0];
+                    const statusElement = firstItem.querySelector('p:nth-child(3)');
+                    if (statusElement) {
+                        statusElement.innerHTML = `<strong>Status:</strong> Available! <a href="${videoUrl}" target="_blank">View Video</a>`;
+                    }
+                }
+                
+                showStatus('Video retrieved successfully!', 'success');
+            }
+            
+            // This function would be called if we had a way to receive the webhook directly
+            // In a real app, your server would receive this webhook and communicate with the frontend
+            function displayVideoOld(videoUrl, videoId) {
+                // Create video element
+                const videoContainer = document.createElement('div');
+                videoContainer.innerHTML = `
+                    <h3>Your Generated Video</h3>
+                    <video controls>
+                        <source src="${videoUrl}" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                    <p>Video ID: ${videoId}</p>
+                    <p>This video will expire in 30 minutes. Download it if you want to keep it.</p>
+                    <a href="${videoUrl}" download class="download-btn">Download Video</a>
+                `;
+                
+                videoOutput.innerHTML = '';
+                videoOutput.appendChild(videoContainer);
+                
+                // Update history item
+                const historyItems = videoHistory.querySelectorAll('div');
+                for (const item of historyItems) {
+                    if (item.textContent.includes(videoId)) {
+                        const statusElement = item.querySelector('p:nth-child(3)');
+                        if (statusElement) {
+                            statusElement.innerHTML = `<strong>Status:</strong> Completed! <a href="${videoUrl}" target="_blank">View Video</a>`;
+                        }
+                        break;
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
